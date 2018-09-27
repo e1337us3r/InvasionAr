@@ -1,6 +1,5 @@
 package com.apolets.arinvaders
 
-import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Color
@@ -17,8 +16,9 @@ import java.util.*
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var viroView: ViroView
-    private lateinit var arScene: ARScene
+    lateinit var viroView: ViroView
+    lateinit var arScene: ARScene
+    lateinit var earthObject: Object3D
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -37,15 +37,27 @@ class MainActivity : AppCompatActivity() {
 
         //Use this view as the main view instead of an xml layout file.
         setContentView(viroView)
+
     }
 
+
+    //Spawns earth, initializes spawn loop
+    private fun startGame(earthPosition: Vector) {
+
+        earthObject = spawnEarth(earthPosition)
+        ShipManager.instance.setMainActivity(this)
+
+        ShipManager.instance.spawnWaveOfShips(7)
+        //ShipManager.instance.spawnLoop.start()
+
+
+    }
 
     private fun displayScene() {
 
         // Create the 3D AR scene, and display the point cloud
         arScene = ARScene()
         arScene.displayPointCloud(true)
-
 
         // Create a TrackedPlanesController to visually display identified planes .
         val controller = PlanesController()
@@ -54,7 +66,7 @@ class MainActivity : AppCompatActivity() {
         controller.addOnPlaneClickListener(object : ClickListener {
             override fun onClick(i: Int, node: Node, clickPosition: Vector) {
                 Log.d(Configuration.DEBUG_TAG, "On plane click")
-                spawnEarth(clickPosition)
+                startGame(clickPosition)
 
                 //Remove plane detection and click listener
                 controller.removeOnPlaneClickListener(this)
@@ -74,9 +86,9 @@ class MainActivity : AppCompatActivity() {
 
     }
 
-    private fun spawnEarth(position: Vector) {
+    private fun spawnEarth(position: Vector): Object3D {
         // Create a droid on the surface
-        val bot = getBitmapFromAsset(this, "earth_ball.jpg")
+        val bot = getBitmapFromAsset("earth_ball.jpg")
         val object3D = Object3D()
         object3D.setPosition(position)
 
@@ -94,8 +106,11 @@ class MainActivity : AppCompatActivity() {
                 obj.geometry.materials = Arrays.asList(material)
 
                 //Model has to be scaled down programmatically since it is too big
-                obj.setScale(Vector(0.001, 0.001, 0.001))
+                obj.setScale(Vector(0.005, 0.005, 0.005))
+
                 Log.d(Configuration.DEBUG_TAG, "Model loaded")
+
+
             }
 
             override fun onObject3DFailed(s: String) {
@@ -103,12 +118,14 @@ class MainActivity : AppCompatActivity() {
             }
         })
 
-        Log.d(Configuration.DEBUG_TAG, "coordinates: x:${object3D.positionRealtime.x}, y:${object3D.positionRealtime.y}, z:${object3D.positionRealtime.z} root: ${arScene.rootNode.positionRealtime}")
 
+
+        Log.d(Configuration.DEBUG_TAG, "Earth coordinates: x:${object3D.positionRealtime.x}, y:${object3D.positionRealtime.y}, z:${object3D.positionRealtime.z} root: ${arScene.rootNode.positionRealtime}")
+        return object3D
     }
 
-    private fun getBitmapFromAsset(context: Context, assetName: String): Bitmap? {
-        val assetManager = context.resources.assets
+    fun getBitmapFromAsset(assetName: String): Bitmap? {
+        val assetManager = this.resources.assets
         val imageStream: InputStream
         try {
             imageStream = assetManager.open(assetName)
@@ -117,8 +134,10 @@ class MainActivity : AppCompatActivity() {
                     + exception.message)
             return null
         }
+        val bitmap = BitmapFactory.decodeStream(imageStream)
+        imageStream.close()
 
-        return BitmapFactory.decodeStream(imageStream)
+        return bitmap
     }
 
     private inner class PlanesController : ARScene.Listener {
