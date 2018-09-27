@@ -1,4 +1,4 @@
-package com.apolets.arinvaders.Static
+package com.apolets.arinvaders.static
 
 // global config objects are supposedly a bad pattern...
 // I already moved some stuff out of here; we can probably get
@@ -10,6 +10,7 @@ class Configuration {
         const val SECONDS_BETWEEN_WAVES_SHORT = 30
         const val SECONDS_BETWEEN_WAVES_MEDIUM = 60
         const val SECONDS_BETWEEN_WAVES_LONG = 90
+        const val EARTH_NODE_NAME = "EARTH"
 
         const val DEBUG_TAG = "MYAPP"
     }

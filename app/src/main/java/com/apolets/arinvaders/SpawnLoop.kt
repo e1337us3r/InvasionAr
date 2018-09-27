@@ -1,7 +1,7 @@
 package com.apolets.arinvaders
 
 import android.os.Handler
-import com.apolets.arinvaders.WorldEntities.ShipType
+import com.apolets.arinvaders.worldEntities.ShipType
 
 /*
 * Manages the lifecycle of the spawned space ships.

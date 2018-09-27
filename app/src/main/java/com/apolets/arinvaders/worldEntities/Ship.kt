@@ -1,7 +1,7 @@
-package com.apolets.arinvaders.WorldEntities
+package com.apolets.arinvaders.worldEntities
 
 import android.util.Log
-import com.apolets.arinvaders.Static.Configuration
+import com.apolets.arinvaders.static.Configuration
 import com.viro.core.AnimationTimingFunction
 import com.viro.core.AnimationTransaction
 import com.viro.core.Object3D
@@ -39,7 +39,7 @@ class Ship(
         val type: ShipType = ShipType.UFO,
         val speed: Int = type.speed,
         var hp: Int = type.hp,
-        val dmg: Long = randomizedDmgValue(ShipType.UFO.dmgScaleValue)) {
+        val dmg: Long = randomizedDmgValue(ShipType.UFO.dmgScaleValue)) : Object3D() {
 
     /*companion object {
         val renderables = mutableMapOf<ShipType, ModelRenderable>()
@@ -47,7 +47,6 @@ class Ship(
 
     // each ship has a unique identifier, to enable easy tracking
     val id = java.util.UUID.randomUUID().toString()
-    var node: Object3D = Object3D()
 
     // called when the laser hits the ship from the middle of the screen
     /*fun onTouchNode(hitTestResult: HitTestResult, mEvent: MotionEvent) {
@@ -59,23 +58,45 @@ class Ship(
         if (hitTestResult.node == null) return
     }*/
 
+    fun damageShip(dmg: Int) {
+        Log.d(Configuration.DEBUG_TAG, "Ship damaged.")
+        this.hp -= dmg
+        if (this.hp <= 0) {
+            destroyShip(false)
+        }
+    }
+
+    fun destroyShip(destroyedByTheEarth: Boolean) {
+
+        if (destroyedByTheEarth) {
+
+            // TODO: play nuke explosion sound / effect?
+        } else {
+            // TODO: play explosion animation
+            //SoundEffectPlayer.playEffect(SoundEffects.EXPLOSION)
+        }
+        this.dispose()
+
+        Log.d(Configuration.DEBUG_TAG, "A ship was destroyed.")
+    }
 
     fun attack(earthPosition: Vector) {
 
-        val distanceFactor = calculateDistanceFactor(node.positionRealtime, earthPosition)
+        val distanceFactor = calculateDistanceFactor(this.positionRealtime, earthPosition)
         Log.d(Configuration.DEBUG_TAG, "factor: $distanceFactor, time: ${3000 * distanceFactor}")
 
         AnimationTransaction.begin()
-        AnimationTransaction.setAnimationDuration(3000 * distanceFactor)
+        AnimationTransaction.setAnimationDuration((3000 * distanceFactor).toLong())
         AnimationTransaction.setTimingFunction(AnimationTimingFunction.EaseOut)
         AnimationTransaction.setListener {
             Log.d(Configuration.DEBUG_TAG, "Animation complete")
+            destroyShip(true)
         }
-        node.setPosition(earthPosition)
+        this.setPosition(earthPosition)
         AnimationTransaction.commit()
     }
 
-    private fun calculateDistanceFactor(start: Vector, end: Vector): Long {
-        return Math.sqrt((end.x - start.x).pow(2).toDouble() + (end.y - start.y).pow(2).toDouble() + (end.z - start.z).pow(2)).toLong()
+    private fun calculateDistanceFactor(start: Vector, end: Vector): Double {
+        return Math.sqrt((end.x - start.x).pow(2).toDouble() + (end.y - start.y).pow(2).toDouble() + (end.z - start.z).pow(2))
     }
 }

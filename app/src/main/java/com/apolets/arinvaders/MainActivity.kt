@@ -1,13 +1,21 @@
 package com.apolets.arinvaders
 
+import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
+import android.os.SystemClock
 import android.support.v7.app.AppCompatActivity
 import android.util.Log
-import com.apolets.arinvaders.Static.Configuration
+import android.view.MotionEvent
+import android.view.View
+import com.apolets.arinvaders.sound.Maestro
+import com.apolets.arinvaders.sound.Music
+import com.apolets.arinvaders.sound.SoundEffectPlayer
+import com.apolets.arinvaders.sound.SoundEffects
+import com.apolets.arinvaders.static.Configuration
 import com.viro.core.*
 import com.viro.core.Vector
 import java.io.IOException
@@ -16,7 +24,7 @@ import java.util.*
 
 class MainActivity : AppCompatActivity() {
 
-    lateinit var viroView: ViroView
+    lateinit var viroView: ViroViewARCore
     lateinit var arScene: ARScene
     lateinit var earthObject: Object3D
 
@@ -37,6 +45,7 @@ class MainActivity : AppCompatActivity() {
 
         //Use this view as the main view instead of an xml layout file.
         setContentView(viroView)
+        SoundEffectPlayer.loadAllEffects(this)
 
     }
 
@@ -47,10 +56,12 @@ class MainActivity : AppCompatActivity() {
         earthObject = spawnEarth(earthPosition)
         ShipManager.instance.setMainActivity(this)
 
+        setAttackListener()
+
         ShipManager.instance.spawnWaveOfShips(7)
         //ShipManager.instance.spawnLoop.start()
 
-
+        Maestro.playMusic(this, Music.BATTLE, true)
     }
 
     private fun displayScene() {
@@ -66,12 +77,15 @@ class MainActivity : AppCompatActivity() {
         controller.addOnPlaneClickListener(object : ClickListener {
             override fun onClick(i: Int, node: Node, clickPosition: Vector) {
                 Log.d(Configuration.DEBUG_TAG, "On plane click")
-                startGame(clickPosition)
 
                 //Remove plane detection and click listener
                 controller.removeOnPlaneClickListener(this)
                 arScene.setListener(null)
                 arScene.displayPointCloud(false)
+
+
+                startGame(clickPosition)
+
             }
 
             override fun onClickState(i: Int, node: Node, clickState: ClickState, vector: Vector) {
@@ -118,10 +132,53 @@ class MainActivity : AppCompatActivity() {
             }
         })
 
-
+        //Give the earth node an identifier so it is distinguished from ships
+        object3D.name = Configuration.EARTH_NODE_NAME
 
         Log.d(Configuration.DEBUG_TAG, "Earth coordinates: x:${object3D.positionRealtime.x}, y:${object3D.positionRealtime.y}, z:${object3D.positionRealtime.z} root: ${arScene.rootNode.positionRealtime}")
         return object3D
+    }
+
+    @SuppressLint("ClickableViewAccessibility")
+    private fun setAttackListener() {
+
+
+        viroView.setOnTouchListener { view, motionEvent ->
+            //create hit test
+            if (motionEvent.action == MotionEvent.ACTION_DOWN) {
+                Log.d(Configuration.DEBUG_TAG, "Screen touch listener")
+                SoundEffectPlayer.playEffect(SoundEffects.LASER)
+            }
+
+            true
+        }
+
+
+    }
+
+    private fun obtainScreenCenterMotionEvent(): MotionEvent {
+
+        val screenCenter = getScreenCenter()
+
+        val downTime = SystemClock.uptimeMillis()
+        val eventTime = SystemClock.uptimeMillis() + 100
+        val x = screenCenter.x.toFloat()
+        val y = screenCenter.y.toFloat()
+
+        val metaState = 0
+        return MotionEvent.obtain(
+                downTime,
+                eventTime,
+                MotionEvent.ACTION_UP,
+                x,
+                y,
+                metaState)
+    } // end obtainScreenCenterMotionEvent
+
+    private fun getScreenCenter(): android.graphics.Point {
+
+        val mainView = findViewById<View>(android.R.id.content)
+        return android.graphics.Point(mainView.width / 2, mainView.height / 2)
     }
 
     fun getBitmapFromAsset(assetName: String): Bitmap? {
