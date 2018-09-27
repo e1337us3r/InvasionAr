@@ -11,6 +11,9 @@ import android.support.v7.app.AppCompatActivity
 import android.util.Log
 import android.view.MotionEvent
 import android.view.View
+import android.view.Window
+import android.view.WindowManager
+import android.widget.ImageView
 import com.apolets.arinvaders.sound.Maestro
 import com.apolets.arinvaders.sound.Music
 import com.apolets.arinvaders.sound.SoundEffectPlayer
@@ -22,6 +25,7 @@ import java.io.IOException
 import java.io.InputStream
 import java.util.*
 
+
 class MainActivity : AppCompatActivity() {
 
     lateinit var viroView: ViroViewARCore
@@ -30,6 +34,10 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        //Hide status and action bar
+        this.requestWindowFeature(Window.FEATURE_NO_TITLE)
+        this.window.setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN)
+        supportActionBar?.hide()
 
         viroView = ViroViewARCore(this, object : ViroViewARCore.StartupListener {
             override fun onSuccess() {
@@ -42,10 +50,20 @@ class MainActivity : AppCompatActivity() {
 
         })
 
-
         //Use this view as the main view instead of an xml layout file.
         setContentView(viroView)
+        placeHUD()
         SoundEffectPlayer.loadAllEffects(this)
+    }
+
+    private fun placeHUD() {
+        val hud = View.inflate(this, R.layout.hud_layout, viroView)
+
+        val image = hud.findViewById<ImageView>(R.id.image)
+
+        image.setImageBitmap(BitmapFactory.decodeStream(resources.openRawResource(R.raw.hud_with_aim)))
+        image.scaleType = ImageView.ScaleType.FIT_XY
+        image.adjustViewBounds = true
 
     }
 
@@ -62,7 +80,21 @@ class MainActivity : AppCompatActivity() {
         //ShipManager.instance.spawnLoop.start()
 
         Maestro.playMusic(this, Music.BATTLE, true)
+
+        //the spin is causing the model to shift, disabling till we figure out a fix
+        //spinEarth()
+
+
     }
+
+    private fun spinEarth() {
+        AnimationTransaction.begin()
+        AnimationTransaction.setAnimationDuration(10000)
+        earthObject.setRotation(Vector(0f, 50000f, 0f))
+        AnimationTransaction.setAnimationLoop(true)
+        AnimationTransaction.commit()
+    }
+
 
     private fun displayScene() {
 
@@ -300,20 +332,24 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         viroView.onActivityResumed(this)
+        Maestro.resumeMusic()
     }
 
     override fun onPause() {
         super.onPause()
         viroView.onActivityPaused(this)
+        Maestro.pauseMusic()
     }
 
     override fun onStop() {
         super.onStop()
         viroView.onActivityStopped(this)
+        Maestro.stopMusic()
     }
 
     override fun onDestroy() {
         super.onDestroy()
         viroView.onActivityDestroyed(this)
+
     }
 }

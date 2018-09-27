@@ -45,18 +45,16 @@ class Ship(
         val renderables = mutableMapOf<ShipType, ModelRenderable>()
     }*/
 
+    init {
+        AnimationTransaction.begin()
+        AnimationTransaction.setAnimationDuration(1000)
+        AnimationTransaction.setAnimationLoop(true)
+        this.setRotation(Vector(0f, 10f, 0f))
+        AnimationTransaction.commit()
+    }
+
     // each ship has a unique identifier, to enable easy tracking
     val id = java.util.UUID.randomUUID().toString()
-
-    // called when the laser hits the ship from the middle of the screen
-    /*fun onTouchNode(hitTestResult: HitTestResult, mEvent: MotionEvent) {
-
-        // since playerAttack in MainActivity already calls damageShip, this
-        // method is useless atm. but let's preserve it for now in case we want to
-        // use it for something (or refactor MainActivity)
-
-        if (hitTestResult.node == null) return
-    }*/
 
     fun damageShip(dmg: Int) {
         Log.d(Configuration.DEBUG_TAG, "Ship damaged.")
